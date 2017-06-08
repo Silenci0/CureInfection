@@ -38,7 +38,7 @@ along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
 #include <sdktools>
 
 // Defines
-#define PLUGIN_VERSION "1.0"
+#define PLUGIN_VERSION "1.1"
 #define TEAM_SURVIVOR 2
 #define TEAM_ZOMBIE 3
 
@@ -51,6 +51,10 @@ new Handle:cvar_CIHKCureChance      = INVALID_HANDLE; // Chance that healthkits 
 new Handle:cvar_CIBackFire          = INVALID_HANDLE; // Enable cure backfire (based on chance of infection per item)
 new Handle:cvar_CIFarGone           = INVALID_HANDLE; // Enable cure only if players are not too infected 
 new Handle:cvar_CIFGoneTime         = INVALID_HANDLE; // The cut off time limit before a player is considered too far gone
+
+// If the cure backfired, then we shouldn't allow them to be cured
+new bool:g_bCIBackFired[MAXPLAYERS+1];
+new bool:g_bCIKeyPressed[MAXPLAYERS+1];
 
 // Other stuff
 new InfectedOffset = -1;
@@ -89,8 +93,28 @@ public OnPluginStart()
     // Get the offset for cure infection
     InfectedOffset = FindSendPropOffs("CHL2MP_Player", "m_IsInfected");
     
+    // Hook player spawn in order to clear any flags
+    HookEvent("player_spawn", Event_CIPlayerSpawn);
+    
 	// Create a config file for the plugin
     AutoExecConfig(true, "plugin.cureinfection");
+}
+
+// Set some variables to default values
+public OnMapStart()
+{
+    for(new i = 1; i <= MaxClients; i++)
+    {
+        g_bCIBackFired[i] = false;
+        g_bCIKeyPressed[i] = false;
+    }
+}
+
+// Set some variables to default values
+public OnClientDisconnect(client)
+{
+    g_bCIBackFired[client] = false;
+    g_bCIKeyPressed[client] = false;
 }
 
 // When the player hits use, look at the item they use and see if its a health item, then cure based on our settings.
@@ -103,6 +127,21 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
         // Find out in the next exciting if-statement of Sourcepawn Z!
         if((buttons & IN_USE) == IN_USE && GetClientTeam(client) == TEAM_SURVIVOR && GetEntData(client, InfectedOffset, 4))
         {
+            // We have to check if they are holding the button down.
+            if (g_bCIKeyPressed[client] == true)
+            {
+                // If the button was pressed and it is currently detected, stop them from that the use key is being held down
+                if (GetClientButtons(client) == IN_USE)
+                {
+                    return Plugin_Continue;
+                }
+                // If not, then go through the rest of the plugin unhindered and change flags!
+                else
+                {
+                    g_bCIKeyPressed[client] = false;
+                }
+            }
+            
             // Now lets find our entity based on the client's viewpoint
             new ent = TraceToEntity(client);
           
@@ -115,10 +154,10 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
                 GetClientEyePosition(client, vecPosClient);
                 GetEntPropVector(ent, Prop_Send, "m_vecOrigin", vecPosEntity);
                 
-                // Get the distance and see if its less than this arbitrary number! (fucking what is this?!)
+                // Get the distance and see if its less than 94 hammer, based on the position of the entity/player.
                 // NOTE: Seems that 90 units is as far as we can go away from the item before not being able to use it. 
                 //       Something tells me this might end up being a problem somehow...
-                if(GetVectorDistance(vecPosClient, vecPosEntity, false) <= 90.0) //1121976320)
+                if(GetVectorDistance(vecPosClient, vecPosEntity, false) <= 94.0)
                 {
                     // Yes it is! Lets find out which item it is!
                     new String:edictname[64];
@@ -129,6 +168,7 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
                     if(StrEqual(edictname, "item_healthvial", true) && GetConVarBool(cvar_CIPillsCure))
                     {   
                         CurePInfection(client, GetConVarFloat(cvar_CIPCureChance));
+                        g_bCIKeyPressed[client] = true;
                         return Plugin_Continue;
                     }
                 
@@ -136,14 +176,21 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
                     if(StrEqual(edictname, "item_healthkit", true) && GetConVarBool(cvar_CIHealthKitsCure))
                     {
                         CurePInfection(client, GetConVarFloat(cvar_CIHKCureChance));
+                        g_bCIKeyPressed[client] = true;
                         return Plugin_Continue;
                     }
                 }
             }
         }
     }
-    
     return Plugin_Continue;
+}
+
+public Action:Event_CIPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+{
+    new client = GetClientOfUserId(GetEventInt(event,"userid"));
+    g_bCIBackFired[client] = false;
+    g_bCIKeyPressed[client] = false;
 }
 
 ///////////////////////////////////
@@ -201,42 +248,50 @@ CurePInfection(client, Float:chance)
     if(chance >= rand && health < 100)
     {
         // If we enabled the fargone cvar
-        if (GetConVarBool(cvar_CIFarGone))
+        if (GetConVarBool(cvar_CIFarGone) && g_bCIBackFired[client] == false)
         {
             if (getInfectTime > GetConVarFloat(cvar_CIFGoneTime))
             {
                 PrintToChat(client, "You've been cured from infection!");
                 SetEntData(client, InfectedOffset, 0, 4, false);
+                return;
             }
             if (getInfectTime <= GetConVarFloat(cvar_CIFGoneTime))
             {
                 PrintToChat(client, "The cure did not work, you're too infected to cure...");
+                return;
             }
         }
         if (!GetConVarBool(cvar_CIFarGone))
         {   
             PrintToChat(client, "You've been cured from infection!");
             SetEntData(client, InfectedOffset, 0, 4, false);
+            return;
         }
     }
     
     // If the cure change is less than what was generated and they have less than 100 health, the user is not cured.
-    if(chance < rand && health < 100)
+    if(chance < rand && health < 100 && g_bCIBackFired[client] == false)
     {   
-        // If backfire was enabled, set the user's turn time to 1 second (almost instant transformation!)
+        // If backfire was enabled, set the user's turn time to 5 second (almost instant transformation!) 
+        // then prevent them from being cured
         if (GetConVarBool(cvar_CIBackFire))
         {
             PrintToChat(client, "It backfired! The infection spreads faster!");
-            if (getInfectTime > 1.0)
+            if (getInfectTime > 5.0)
             {
-                SetTurnTime(client, 1.0);
+                g_bCIBackFired[client] = true;
+                SetTurnTime(client, 5.0);
             }
+            return;
         }
         if (!GetConVarBool(cvar_CIBackFire))
         {
             PrintToChat(client, "The cure was not effective!");
+            return;
         }
     }
+    return;
 }
 
 ///////////////////////////////////

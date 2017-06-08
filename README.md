@@ -1,7 +1,15 @@
 # CureInfection
-ZPS plugin that uses health items to cure infection.
+This ZPS plugin is an advanced pillscure-type plugin that allows for further customization of the ability of health items to cure infection. Not only can you make this plugin work like the original pillscure plugin, you can also do the following with it:
 
-This plugin is an advanced version of the original pills cure plugin in that it gives more options for gameplay tweeks. The plugin has the following cvars:
+- Decide which health items can cure infection.
+- Give health times a chance to cure/fail to cure.
+- Disable the cure if players only have seconds before turning.
+- Cause the cure to backfire and turn the player into a zombie (based on the item's cure chances)
+
+Further customizations for the pillscure functionality may be added later or upon consideration.
+
+# Cvars
+The following cvars are available in the plugin:
     
 - sm_cureinfection_enabled = Disables/Enables the plugin.
 - sm_cureinfection_pills = Disable/Enables cure infection on the pill bottle health item.
@@ -12,6 +20,13 @@ This plugin is an advanced version of the original pills cure plugin in that it 
 - sm_cureinfection_fargone = Optional setting that can cause the cure to be ineffective if player has been infected for too long.
 - sm_cureinfection_fgonetime = The time until infection, in seconds, in which the cure becomes ineffective. Requires sm_cureinfection_fargone to be enabled. Defauilt is 5 seconds.
 
+# Changelog
+1.1 Update (06-08-2017)
+-----------------
+- Fixed an issue with button presses and the CureInfection method.
+- Fixed bug with health items not curing the user.
+- Refined code to get cvars to work correctly.
+- Added global client flags to control cure functionality as well as conditions to clear said flags.
 
 1.0 Initial Commit (06-04-2017)
 -----------------
