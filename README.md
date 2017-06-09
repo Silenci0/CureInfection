@@ -6,7 +6,7 @@ This ZPS plugin is an advanced pillscure-type plugin that allows for further cus
 - Disable the cure if players only have seconds before turning.
 - Cause the cure to backfire and turn the player into a zombie (based on the item's cure chances)
 
-Further customizations for the pillscure functionality may be added later or upon consideration.
+The plugin checks if the survivor player is infected and if the player's health is less than 100. This way, it will prevent users from being cured if they cannot technically use the health item. Further customizations for the pillscure functionality may be added later or upon consideration.
 
 # Cvars
 The following cvars are available in the plugin:
