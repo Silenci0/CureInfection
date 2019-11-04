@@ -25,12 +25,18 @@ The following cvars are available in the plugin:
 - sm_cureinfection_healthkits = Disable/Enables cure infection on the healthkit health item.
 - sm_cureinfection_hkchance = Sets the chance that the pill bottles cures infection. Requires sm_cureinfection_healthkits to be enabled. 1.0 = 100%
 - sm_cureinfection_backfire = Optional setting that will cause the player to zombify faster upon cure failure.
-- sm_cureinfection_fargone = Optional setting that can cause the cure to be ineffective if player has been infected for too long.
-- sm_cureinfection_fgonetime = The time until infection, in seconds, in which the cure becomes ineffective. Requires sm_cureinfection_fargone to be enabled. Defauilt is 5 seconds.
-- sm_cureinfection_infecttime = ZPS's overall infection time in seconds. This does not need to be changed, but it was added in case infection time was ever updated in a future game update.Do not change this unless the game was updated and infection time changed.
+- sm_cureinfection_pillsname = Specifies the entity name for the pills that we'll be looking for. This should only be changed if the pills entity name has been changed. Default: item_healthvial
+- sm_cureinfection_hkitname = Specifies the entity name for the healthkits that we'll be looking for. This should only be changed if the healthkit entity name has been changed. Default: item_healthkit
 
 
 # Changelog
+3.0 Update (11-03-2019)
+----------------------
+- Removed the fargone feature and its associated timers due to lag issues caused by having too much going on at once.
+- Updated the code with cvars that will take in the item names from the configuration file. This way, the item entity can be renamed easily without having to recompile the plugin itself.
+- Updated the code to, hopefully, work better than previously. It now hits healthkits better, though pills can sometimes not trigger depending on if its too close to another entity or something similar, most likely due to the entity's size. This is an known issue that, unfortunately, cannot be solved with the way I am doing things in the plugin. It will need to use something like zp_entitypickedup as an event to fix this.
+- Recompiled the plugin for Sourcemod 1.9
+
 
 2.0 Update (06-20-2018)
 ----------------------
