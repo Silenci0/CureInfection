@@ -19,17 +19,24 @@ If you find any bugs, contact me via my Steam group: https://steamcommunity.com/
 # Cvars
 The following cvars are available in the plugin:
     
-- sm_cureinfection_enabled = Disables/Enables the plugin.
-- sm_cureinfection_pills = Disable/Enables cure infection on the pill bottle health item.
-- sm_cureinfection_pchance = Sets the chance that the pill bottles cures infection. Requires sm_cureinfection_pills to be enabled. 1.0 = 100%
-- sm_cureinfection_healthkits = Disable/Enables cure infection on the healthkit health item.
-- sm_cureinfection_hkchance = Sets the chance that the pill bottles cures infection. Requires sm_cureinfection_healthkits to be enabled. 1.0 = 100%
-- sm_cureinfection_backfire = Optional setting that will cause the player to zombify faster upon cure failure.
-- sm_cureinfection_pillsname = Specifies the entity name for the pills that we'll be looking for. This should only be changed if the pills entity name has been changed. Default: item_healthvial
-- sm_cureinfection_hkitname = Specifies the entity name for the healthkits that we'll be looking for. This should only be changed if the healthkit entity name has been changed. Default: item_healthkit
+- `sm_cureinfection_enabled` - Disables/Enables the plugin.
+- `sm_cureinfection_pills` - Disable/Enables cure infection on the pill bottle health item.
+- `sm_cureinfection_pchance` - Sets the chance that the pill bottles cures infection. Requires sm_cureinfection_pills to be enabled. 1.0 = 100%
+- `sm_cureinfection_healthkits` - Disable/Enables cure infection on the healthkit health item.
+- `sm_cureinfection_hkchance` - Sets the chance that the pill bottles cures infection. Requires sm_cureinfection_healthkits to be enabled. 1.0 = 100%
+- `sm_cureinfection_backfire` - Optional setting that will cause the player to zombify faster upon cure failure.
+- `sm_cureinfection_pillsname` - Specifies the entity name for the pills that we'll be looking for. This should only be changed if the pills entity name has been changed. Default: item_healthvial
+- `sm_cureinfection_hkitname` - Specifies the entity name for the healthkits that we'll be looking for. This should only be changed if the healthkit entity name has been changed. Default: item_healthkit
 
 
 # Changelog
+3.1.0 Update (12-05-2019)
+----------------------
+- Updated plugin code to use the new syntax.
+- Updated the zpsinfection_stocks include.
+- Compiled plugins for SM 1.10
+
+
 3.0 Update (11-03-2019)
 ----------------------
 - Removed the fargone feature and its associated timers due to lag issues caused by having too much going on at once.

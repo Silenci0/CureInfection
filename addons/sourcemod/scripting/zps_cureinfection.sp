@@ -38,31 +38,33 @@ along with this plugin.  If not, see <http://www.gnu.org/licenses/>.
 #include <sdkhooks>
 #include <zpsinfection_stocks>
 
+#pragma newdecls required
+
 // Defines
-#define PLUGIN_VERSION "3.0"
+#define PLUGIN_VERSION "3.1.0"
 #define TEAM_SURVIVOR 2
 #define TEAM_ZOMBIE 3
 
 // Handles and other globals
-new Handle:cvar_CIEnabled           = INVALID_HANDLE; // Enables/Disable plugin
-new Handle:cvar_CIPillsCure         = INVALID_HANDLE; // Allow/Disallow pills to cure
-new Handle:cvar_CIPCureChance       = INVALID_HANDLE; // Chance that pills cure infection
-new Handle:cvar_CIHealthKitsCure    = INVALID_HANDLE; // Allow/Disallow healthkits to cure infection
-new Handle:cvar_CIHKCureChance      = INVALID_HANDLE; // Chance that healthkits cure infection
-new Handle:cvar_CIBackFire          = INVALID_HANDLE; // Enable cure backfire (based on chance of infection per item)
-new Handle:cvar_CIPillsName         = INVALID_HANDLE; // Entity name for pills (configurable via configs)
-new Handle:cvar_CIHKitName          = INVALID_HANDLE; // Entity name for healthkits (configurable via configs)
+ConVar cvar_CIEnabled           = null; // Enables/Disable plugin
+ConVar cvar_CIPillsCure         = null; // Allow/Disallow pills to cure
+ConVar cvar_CIPCureChance       = null; // Chance that pills cure infection
+ConVar cvar_CIHealthKitsCure    = null; // Allow/Disallow healthkits to cure infection
+ConVar cvar_CIHKCureChance      = null; // Chance that healthkits cure infection
+ConVar cvar_CIBackFire          = null; // Enable cure backfire (based on chance of infection per item)
+ConVar cvar_CIPillsName         = null; // Entity name for pills (configurable via configs)
+ConVar cvar_CIHKitName          = null; // Entity name for healthkits (configurable via configs)
 
 // If the cure backfired, then we shouldn't allow them to be cured
-new bool:g_bCIBackFired[MAXPLAYERS+1];
-new bool:g_bCIKeyPressed[MAXPLAYERS+1];
+bool g_bCIBackFired[MAXPLAYERS+1];
+bool g_bCIKeyPressed[MAXPLAYERS+1];
 
 // The name variables used to 
-new String:g_sCIPillsName[PLATFORM_MAX_PATH];
-new String:g_sCIHKitName[PLATFORM_MAX_PATH];
+char g_sCIPillsName[PLATFORM_MAX_PATH];
+char g_sCIHKitName[PLATFORM_MAX_PATH];
 
 // Plugin info/credits
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
     name = "[ZPS] Cure Infection",
     author = "Mr.Silence",
@@ -77,7 +79,7 @@ public Plugin:myinfo =
 //===============================//
 ///////////////////////////////////
 // Setup our config file and cvars
-public OnPluginStart()
+public void OnPluginStart()
 {
 	// Give our handles information.
     cvar_CIEnabled = CreateConVar(
@@ -147,20 +149,20 @@ public OnPluginStart()
     AutoExecConfig(true, "plugin.cureinfection");
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
     UnhookEvent("player_spawn", Event_CIPlayerSpawn);
 }
 
 // Set some variables to default values
-public OnMapStart()
+public void OnMapStart()
 {
     // Get the names of our pills and healthkits
     GetConVarString(cvar_CIPillsName, g_sCIPillsName, PLATFORM_MAX_PATH);
     GetConVarString(cvar_CIHKitName, g_sCIHKitName, PLATFORM_MAX_PATH);
 
     // Set our stuff to defaults, just in case
-    for(new i = 1; i <= MaxClients; i++)
+    for(int i = 1; i <= MaxClients; i++)
     {
         g_bCIBackFired[i] = false;
         g_bCIKeyPressed[i] = false;
@@ -168,7 +170,7 @@ public OnMapStart()
 }
 
 // Set some variables to default values
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
     g_bCIBackFired[client] = false;
     g_bCIKeyPressed[client] = false;
@@ -182,7 +184,7 @@ public OnClientDisconnect(client)
 /////////////////////////////////
 // NOTE: Figure out a more accurate way to ensure the entity we clicked use on actually does what its supposed to...
 // When the player hits use, look at the item they use and see if its a health item, then cure based on our settings.
-public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:angles[3], &weapon)
+public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
 {
     // First off, is our plugin enabled?
     if(GetConVarBool(cvar_CIEnabled))
@@ -216,14 +218,14 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
             }
             
             // Now lets find our entity based on the client's viewpoint
-            new ent = TraceToEntity(client);
+            int ent = TraceToEntity(client);
           
             // Is it valid at all?
             if(IsValidEntity(ent) && IsValidEdict(ent))
             {
                 // Compare the prop's position to the clients
-                new Float:vecPosEntity[3] = 0.0;
-                new Float:vecPosClient[3] = 0.0;
+                float vecPosEntity[3] = 0.0;
+                float vecPosClient[3] = 0.0;
                 GetClientEyePosition(client, vecPosClient);
                 GetEntPropVector(ent, Prop_Send, "m_vecOrigin", vecPosEntity);
                 
@@ -233,7 +235,7 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
                 if(GetVectorDistance(vecPosClient, vecPosEntity, false) <= 100.0)
                 {
                     // Yes it is! Lets find out which item it is!
-                    new String:edictname[64];
+                    char edictname[64];
                     GetEdictClassname(ent, edictname, 64);
 
                     // Pills
@@ -258,9 +260,9 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
     return Plugin_Continue;
 }
 
-public Action:Event_CIPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public Action Event_CIPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
-    new client = GetClientOfUserId(GetEventInt(event,"userid"));
+    int client = GetClientOfUserId(GetEventInt(event,"userid"));
     g_bCIBackFired[client] = false;
     g_bCIKeyPressed[client] = false;
 }
@@ -271,11 +273,11 @@ public Action:Event_CIPlayerSpawn(Handle:event, const String:name[], bool:dontBr
 //===============================//
 ///////////////////////////////////
 // Trace the entity to the player client
-public TraceToEntity(client)
+public int TraceToEntity(int client)
 {
     // Get both eye position and angle vectors of our client
-    new Float:vecClientEyePos[3] = 0.0; 
-    new Float:vecClientEyeAng[3] = 0.0;
+    float vecClientEyePos[3] = 0.0; 
+    float vecClientEyeAng[3] = 0.0;
     GetClientEyePosition(client, vecClientEyePos);
     GetClientEyeAngles(client, vecClientEyeAng);
     
@@ -299,7 +301,7 @@ public TraceToEntity(client)
 
 // Check our data to check that the entity we "hit" is not itself
 // In other words: STOP HITTING YOURSELF! STOP HITTING YOURSELF! STOP HITTING YOURSELF!
-public bool:TraceRayDontHitSelf(entity, mask, any:data)
+public bool TraceRayDontHitSelf(int entity, int mask, any data)
 {
     if(entity == data)
     {
@@ -311,11 +313,11 @@ public bool:TraceRayDontHitSelf(entity, mask, any:data)
 
 // Method used to determine how to cure infection for whatever item we want
 // ... or to make it backfire depending on chance >:3
-CurePInfection(client, Float:chance)
+void CurePInfection(int client, float chance)
 {
     // Get our chance of infection and player health
-    new Float:rand = GetRandomFloat(0.0, 1.0);
-    new health = GetClientHealth(client);
+    float rand = GetRandomFloat(0.0, 1.0);
+    int health = GetClientHealth(client);
 
     // If our chance setting is greater than or equal to what was generated, we cure infection
     if(chance >= rand && health < 100)
